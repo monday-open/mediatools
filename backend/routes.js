@@ -1,5 +1,7 @@
-const router = require('express').Router();
+const express = require('express');
 const douyin = require('../services/douyin');
+
+const router = express.Router();
 
 /**
  * POST /api/douyin/remove-watermark
@@ -16,6 +18,8 @@ router.post('/remove-watermark', async (req, res) => {
       });
     }
 
+    console.log('收到去水印请求:', url);
+
     // 从抖音链接中提取视频ID
     const videoId = extractDouyinVideoId(url);
 
@@ -25,6 +29,8 @@ router.post('/remove-watermark', async (req, res) => {
         error: '无效的抖音视频链接'
       });
     }
+
+    console.log('视频ID:', videoId);
 
     // 调用去水印服务
     const result = await douyin.removeWatermark(videoId);
