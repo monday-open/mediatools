@@ -341,18 +341,16 @@
     </div>
 
     <script>
-        // CORS 代理列表（按优先级排序）
-        const CORS_PROXIES = [
-            // Cloudflare Workers（如果部署了）
-            // 'https://your-worker.workers.dev/?url=',
-            // 公共 CORS 代理
-            'https://api.codetabs.com/v1/proxy?quest=',
-            'https://corsproxy.io/?',
-            'https://api.allorigins.win/raw?url=',
+        // API 端点列表（按优先级排序）
+        const API_ENDPOINTS = [
+            // Vercel 后端
+            'https://mediatools-backend.vercel.app/api/douyin/remove-watermark',
+            // 备用公共 API
+            'https://apis.jxcxin.cn/api/douyin',
+            'https://www.devtool.top/api/douyin/parse'
         ];
 
-        // 当前使用的代理索引
-        let currentProxyIndex = 0;
+        let currentApiIndex = 0;
 
         /**
          * 从复制内容中提取抖音链接
@@ -405,116 +403,60 @@
         }
 
         /**
-         * 使用 CORS 代理发起请求
+         * 调用 API
          */
-        async function fetchWithProxy(url, retryCount = 0) {
-            if (retryCount >= CORS_PROXIES.length) {
-                throw new Error('所有代理都失败了');
+        async function callApi(url, retryCount = 0) {
+            if (retryCount >= API_ENDPOINTS.length) {
+                throw new Error('所有 API 都失败了');
             }
 
-            const proxy = CORS_PROXIES[currentProxyIndex];
-            const proxyUrl = proxy + encodeURIComponent(url);
+            const apiEndpoint = API_ENDPOINTS[currentApiIndex];
+            console.log(`尝试 API ${currentApiIndex + 1}/${API_ENDPOINTS.length}:`, apiEndpoint);
 
             try {
-                console.log(`尝试代理 ${currentProxyIndex + 1}/${CORS_PROXIES.length}:`, proxy);
-                
-                const response = await fetch(proxyUrl, {
+                const isVercelApi = apiEndpoint.includes('mediatools-backend');
+                const apiUrl = isVercelApi 
+                    ? apiEndpoint 
+                    : `${apiEndpoint}?url=${encodeURIComponent(url)}`;
+
+                const response = await fetch(apiUrl, {
+                    method: isVercelApi ? 'POST' : 'GET',
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Mobile Safari/537.36',
-                        'Referer': 'https://www.douyin.com/',
-                    }
+                        'Content-Type': 'application/json',
+                    },
+                    body: isVercelApi ? JSON.stringify({ url }) : null
                 });
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
 
-                const text = await response.text();
-                
-                // 检查是否是 HTML 错误页面
-                if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-                    throw new Error('返回了 HTML 错误页面');
+                const data = await response.json();
+                console.log('API 响应:', data);
+
+                // 检查响应格式
+                if (data.success && data.url) {
+                    return { success: true, url: data.url, method: data.method || 'api' };
                 }
 
-                return text;
+                if (data.code === 200 && data.data?.url) {
+                    return { success: true, url: data.data.url, method: 'jxcxin-api' };
+                }
+
+                if (data.code === 400 || data.code === 404) {
+                    throw new Error('解析失败');
+                }
+
+                throw new Error('无效响应');
+
             } catch (error) {
-                console.error(`代理 ${currentProxyIndex + 1} 失败:`, error.message);
+                console.error(`API ${currentApiIndex + 1} 失败:`, error.message);
                 
-                // 切换到下一个代理
-                currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+                // 切换到下一个 API
+                currentApiIndex = (currentApiIndex + 1) % API_ENDPOINTS.length;
                 
                 // 重试
-                return fetchWithProxy(url, retryCount + 1);
-            }
-        }
-
-        /**
-         * 从短链接获取视频 ID
-         */
-        async function getVideoIdFromUrl(url) {
-            try {
-                updateProgress(20, '正在解析链接...');
-                
-                // 如果是长链接，直接提取 ID
-                const longLinkMatch = url.match(/video\/(\d+)/);
-                if (longLinkMatch) {
-                    return longLinkMatch[1];
-                }
-
-                // 如果是短链接，需要解析重定向
-                const html = await fetchWithProxy(url);
-                
-                // 从 HTML 中提取视频 ID
-                const match = html.match(/video\/(\d+)/);
-                if (match) {
-                    return match[1];
-                }
-
-                // 尝试从 iesdouyin 链接提取
-                const iesMatch = html.match(/iesdouyin\.com\/share\/video\/(\d+)/);
-                if (iesMatch) {
-                    return iesMatch[1];
-                }
-
-                return null;
-            } catch (error) {
-                console.error('解析链接失败:', error);
-                return null;
-            }
-        }
-
-        /**
-         * 使用 iesdouyin API 获取视频
-         */
-        async function getVideoByApi(videoId) {
-            try {
-                updateProgress(50, '正在获取视频信息...');
-                
-                const apiUrl = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${videoId}`;
-                const jsonText = await fetchWithProxy(apiUrl);
-                
-                const data = JSON.parse(jsonText);
-                console.log('API 响应:', data);
-                
-                if (data && data.status_code === 0 && data.item_list && data.item_list.length > 0) {
-                    const item = data.item_list[0];
-                    const videoInfo = item.video;
-                    
-                    if (videoInfo && videoInfo.play_addr && videoInfo.play_addr.url_list) {
-                        let videoUrl = videoInfo.play_addr.url_list[0];
-                        // 替换水印参数
-                        videoUrl = videoUrl.replace('playwm', 'play');
-                        videoUrl = videoUrl.replace(/&watermark=1/g, '&watermark=0');
-                        videoUrl = videoUrl.replace(/watermark=1/g, 'watermark=0');
-                        
-                        return { success: true, url: videoUrl, method: 'iesdouyin-api' };
-                    }
-                }
-                
-                return { success: false };
-            } catch (error) {
-                console.error('API 方式失败:', error);
-                return { success: false };
+                return callApi(url, retryCount + 1);
             }
         }
 
@@ -546,32 +488,17 @@
             submitBtn.disabled = true;
             submitBtn.textContent = '处理中...';
 
-            // 重置代理索引
-            currentProxyIndex = 0;
+            // 重置 API 索引
+            currentApiIndex = 0;
 
             try {
-                updateProgress(10, '正在解析链接...');
+                updateProgress(20, '正在解析链接...');
                 
-                // 获取视频 ID
-                const videoId = await getVideoIdFromUrl(videoUrl);
+                const result = await callApi(videoUrl);
                 
-                if (!videoId) {
-                    hideProgress();
-                    errorMessage.textContent = '❌ 无法解析视频链接，请检查链接是否正确';
-                    errorArea.classList.add('show');
-                    return;
-                }
-                
-                console.log('视频ID:', videoId);
-                
-                // 尝试获取视频
-                const result = await getVideoByApi(videoId);
-                
-                updateProgress(90, '正在处理视频...');
+                updateProgress(100, '处理完成！');
                 
                 if (result.success) {
-                    updateProgress(100, '处理完成！');
-                    
                     document.getElementById('downloadLink').href = result.url;
                     document.getElementById('methodUsed').textContent = `使用方法：${result.method}`;
                     
