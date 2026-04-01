@@ -72,6 +72,136 @@
             margin-top: 10px;
         }
 
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .result-info {
+            margin-bottom: 20px;
+        }
+
+        .result-info p {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .result-info strong {
+            color: #667eea;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .error-message {
+            color: #dc3545;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .tool-links {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -174,6 +304,10 @@
             .tools-grid {
                 grid-template-columns: 1fr;
             }
+
+            .input-group {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -199,15 +333,48 @@
                 <p><strong>使用即代表您同意本免责声明。</strong></p>
             </div>
 
-            <h3>📱 推荐工具</h3>
-            <p style="color: #666; margin-bottom: 20px;">以下工具经过测试，可以正常使用：</p>
+            <div class="input-section">
+                <h3>📱 粘贴抖音链接</h3>
+                <div class="input-group">
+                    <input type="text" id="douyinUrl" placeholder="粘贴抖音分享链接，如：https://v.douyin.com/xxx/ 或 7.43 pda:/ 让你...">
+                    <button class="btn btn-primary" id="parseBtn" onclick="parseVideo()">解析视频</button>
+                </div>
+                <p style="color: #666; font-size: 0.85rem;">支持：抖音视频链接、分享口令、完整URL</p>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                正在解析中，请稍候...
+            </div>
+
+            <div id="result" class="result-section">
+                <div class="result-info">
+                    <p><strong>标题：</strong><span id="videoTitle"></span></p>
+                    <p><strong>作者：</strong><span id="videoAuthor"></span></p>
+                    <p><strong>点赞：</strong><span id="videoLikes"></span> | <strong>评论：</strong><span id="videoComments"></span> | <strong>分享：</strong><span id="videoShares"></span></p>
+                </div>
+                <video id="videoPreview" class="result-video" controls></video>
+                <div>
+                    <a id="downloadBtn" class="download-btn" download>下载无水印视频</a>
+                    <a id="downloadCover" class="download-btn" download style="background: #17a2b8;">下载封面</a>
+                </div>
+            </div>
+
+            <div id="error" class="error-message" style="display: none;"></div>
+
+            <div class="notice-box">
+                <h4>💡 使用提示</h4>
+                <p>本功能使用 Cloudflare Workers 实现，完全免费。如果解析失败，请使用下方的备用工具。</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">🔧 备用工具</h3>
+            <p style="color: #666; margin-bottom: 20px;">如果本站解析失败，请使用以下第三方工具：</p>
 
             <div class="tool-links">
                 <a href="https://qinggongju.com/douyin" target="_blank" class="tool-link">
                     <span class="tool-link-icon">🔧</span>
                     <div class="tool-link-content">
                         <h3>轻工具导航</h3>
-                        <p>支持抖音/快手/小红书/B站，免费无需登录</p>
+                        <p>支持抖音/快手/小红书/B站</p>
                     </div>
                 </a>
 
@@ -215,53 +382,148 @@
                     <span class="tool-link-icon">🎬</span>
                     <div class="tool-link-content">
                         <h3>6li6在线工具</h3>
-                        <p>抖音视频/图片无水印下载，支持剪贴板识别</p>
+                        <p>抖音视频/图片无水印下载</p>
                     </div>
                 </a>
-
-                <a href="https://douyintool.com/" target="_blank" class="tool-link">
-                    <span class="tool-link-icon">🎥</span>
-                    <div class="tool-link-content">
-                        <h3>抖音无水印解析</h3>
-                        <p>免费AI配音，小程序同步支持</p>
-                    </div>
-                </a>
-
-                <a href="https://www.douyinxz.com/zh/" target="_blank" class="tool-link">
-                    <span class="tool-link-icon">✨</span>
-                    <div class="tool-link-content">
-                        <h3>抖音下载站</h3>
-                        <p>永久免费，支持抖音合集去水印</p>
-                    </div>
-                </a>
-            </div>
-
-            <div class="notice-box">
-                <h4>💡 使用提示</h4>
-                <p>由于抖音 API 经常变动，我们暂时无法提供在线解析功能。请使用上方推荐的第三方工具，它们都经过测试可以正常使用。</p>
-                <p style="margin-top: 10px;"><strong>使用方法：</strong>复制抖音视频链接 → 打开上方任一工具 → 粘贴链接 → 点击解析 → 下载无水印视频</p>
             </div>
         </div>
 
         <div class="tools-grid">
-            <div class="tool-card" onclick="location.href='https://qinggongju.com/douyin'">
+            <div class="tool-card" onclick="location.href='#image-tools'">
                 <div class="tool-icon">🖼️</div>
                 <div class="tool-title">图片格式转换</div>
                 <div class="tool-desc">支持 PNG、JPG、WEBP 格式互相转换</div>
             </div>
 
-            <div class="tool-card" onclick="location.href='https://qinggongju.com/douyin'">
+            <div class="tool-card" onclick="location.href='#image-tools'">
                 <div class="tool-icon">📉</div>
                 <div class="tool-title">图片压缩</div>
                 <div class="tool-desc">压缩图片大小，保持画质</div>
             </div>
 
-            <div class="tool-card" onclick="location.href='https://qinggongju.com/douyin'">
+            <div class="tool-card" onclick="location.href='#image-tools'">
                 <div class="tool-icon">📐</div>
                 <div class="tool-title">图片尺寸调整</div>
                 <div class="tool-desc">调整图片宽高比和尺寸</div>
             </div>
         </div>
     </div>
+
+    <script>
+        // Cloudflare Workers API 地址
+        // 部署后替换为你的 Worker URL
+        const API_URL = 'https://douyin-api.你的账户.workers.dev';
+
+        // 备用 API 列表
+        const BACKUP_APIS = [
+            'https://apis.jxcxin.cn/api/douyin',
+            'https://www.devtool.top/api/douyin/parse'
+        ];
+
+        async function parseVideo() {
+            const urlInput = document.getElementById('douyinUrl');
+            const parseBtn = document.getElementById('parseBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('请输入抖音链接');
+                return;
+            }
+
+            // 显示加载状态
+            parseBtn.disabled = true;
+            loading.style.display = 'block';
+            result.classList.remove('show');
+            error.style.display = 'none';
+
+            try {
+                // 尝试主 API
+                let data = await tryMainAPI(url);
+                
+                // 如果主 API 失败，尝试备用 API
+                if (!data || !data.success) {
+                    data = await tryBackupAPIs(url);
+                }
+
+                if (data && data.success) {
+                    showResult(data.data);
+                } else {
+                    showError('解析失败，请尝试备用工具');
+                }
+            } catch (err) {
+                showError('解析出错: ' + err.message);
+            } finally {
+                parseBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function tryMainAPI(url) {
+            try {
+                const response = await fetch(`${API_URL}?url=${encodeURIComponent(url)}`);
+                return await response.json();
+            } catch (err) {
+                console.log('Main API failed:', err);
+                return null;
+            }
+        }
+
+        async function tryBackupAPIs(url) {
+            for (const api of BACKUP_APIS) {
+                try {
+                    const response = await fetch(`${api}?url=${encodeURIComponent(url)}`);
+                    const data = await response.json();
+                    if (data.code === 200 || data.success) {
+                        return { success: true, data: data.data || data };
+                    }
+                } catch (err) {
+                    console.log(`Backup API ${api} failed:`, err);
+                }
+            }
+            return null;
+        }
+
+        function showResult(data) {
+            document.getElementById('videoTitle').textContent = data.title || '无标题';
+            document.getElementById('videoAuthor').textContent = data.author || '未知';
+            document.getElementById('videoLikes').textContent = formatNumber(data.like_count || 0);
+            document.getElementById('videoComments').textContent = formatNumber(data.comment_count || 0);
+            document.getElementById('videoShares').textContent = formatNumber(data.share_count || 0);
+
+            const videoPreview = document.getElementById('videoPreview');
+            videoPreview.src = data.video_url;
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.href = data.video_url;
+            downloadBtn.download = `${data.title || 'video'}.mp4`;
+
+            const downloadCover = document.getElementById('downloadCover');
+            downloadCover.href = data.cover;
+            downloadCover.download = `${data.title || 'cover'}.jpg`;
+
+            document.getElementById('result').classList.add('show');
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function formatNumber(num) {
+            if (num >= 10000) {
+                return (num / 10000).toFixed(1) + 'w';
+            }
+            return num.toString();
+        }
+
+        // 支持粘贴自动解析
+        document.getElementById('douyinUrl').addEventListener('paste', function(e) {
+            setTimeout(() => parseVideo(), 100);
+        });
+    </script>
 </body>
 </html>
