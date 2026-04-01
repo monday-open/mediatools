@@ -2,13 +2,14 @@
   "name": "mediatools-api",
   "version": "1.0.0",
   "description": "MediaTools backend API for video watermark removal",
-  "main": "api/douyin.js",
+  "main": "server.js",
   "scripts": {
-    "start": "vercel dev",
-    "deploy": "vercel --prod"
+    "start": "node server.js",
+    "dev": "node server.js"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "axios": "^1.6.0",
+    "puppeteer-core": "^24.40.0"
   },
   "devDependencies": {
     "vercel": "^28.0.0"
