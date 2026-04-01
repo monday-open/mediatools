@@ -341,6 +341,19 @@
     </div>
 
     <script>
+        // CORS 代理列表（按优先级排序）
+        const CORS_PROXIES = [
+            // Cloudflare Workers（如果部署了）
+            // 'https://your-worker.workers.dev/?url=',
+            // 公共 CORS 代理
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/raw?url=',
+        ];
+
+        // 当前使用的代理索引
+        let currentProxyIndex = 0;
+
         /**
          * 从复制内容中提取抖音链接
          */
@@ -350,7 +363,7 @@
             const patterns = [
                 /https?:\/\/v\.douyin\.com\/[\w-]+\/?/,
                 /https?:\/\/www\.douyin\.com\/video\/\d+/,
-                /https?:\/\/www\.douyin\.com\/aweme\/\d+/
+                /https?:\/\/www\.iesdouyin\.com\/share\/video\/\d+/
             ];
             
             for (const pattern of patterns) {
@@ -392,37 +405,80 @@
         }
 
         /**
-         * 从短链接获取视频ID
+         * 使用 CORS 代理发起请求
          */
-        async function getVideoIdFromShortUrl(shortUrl) {
+        async function fetchWithProxy(url, retryCount = 0) {
+            if (retryCount >= CORS_PROXIES.length) {
+                throw new Error('所有代理都失败了');
+            }
+
+            const proxy = CORS_PROXIES[currentProxyIndex];
+            const proxyUrl = proxy + encodeURIComponent(url);
+
             try {
-                updateProgress(20, '正在解析短链接...');
+                console.log(`尝试代理 ${currentProxyIndex + 1}/${CORS_PROXIES.length}:`, proxy);
                 
-                // 使用 CORS 代理
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(shortUrl)}`;
-                const response = await fetch(proxyUrl);
-                
+                const response = await fetch(proxyUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Mobile Safari/537.36',
+                        'Referer': 'https://www.douyin.com/',
+                    }
+                });
+
                 if (!response.ok) {
-                    throw new Error('无法访问链接');
+                    throw new Error(`HTTP ${response.status}`);
                 }
+
+                const text = await response.text();
                 
-                const html = await response.text();
+                // 检查是否是 HTML 错误页面
+                if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
+                    throw new Error('返回了 HTML 错误页面');
+                }
+
+                return text;
+            } catch (error) {
+                console.error(`代理 ${currentProxyIndex + 1} 失败:`, error.message);
+                
+                // 切换到下一个代理
+                currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+                
+                // 重试
+                return fetchWithProxy(url, retryCount + 1);
+            }
+        }
+
+        /**
+         * 从短链接获取视频 ID
+         */
+        async function getVideoIdFromUrl(url) {
+            try {
+                updateProgress(20, '正在解析链接...');
+                
+                // 如果是长链接，直接提取 ID
+                const longLinkMatch = url.match(/video\/(\d+)/);
+                if (longLinkMatch) {
+                    return longLinkMatch[1];
+                }
+
+                // 如果是短链接，需要解析重定向
+                const html = await fetchWithProxy(url);
                 
                 // 从 HTML 中提取视频 ID
                 const match = html.match(/video\/(\d+)/);
                 if (match) {
                     return match[1];
                 }
-                
-                // 尝试从 URL 重定向中提取
-                const urlMatch = html.match(/https?:\/\/www\.douyin\.com\/video\/(\d+)/);
-                if (urlMatch) {
-                    return urlMatch[1];
+
+                // 尝试从 iesdouyin 链接提取
+                const iesMatch = html.match(/iesdouyin\.com\/share\/video\/(\d+)/);
+                if (iesMatch) {
+                    return iesMatch[1];
                 }
-                
+
                 return null;
             } catch (error) {
-                console.error('解析短链接失败:', error);
+                console.error('解析链接失败:', error);
                 return null;
             }
         }
@@ -432,14 +488,12 @@
          */
         async function getVideoByApi(videoId) {
             try {
-                updateProgress(40, '正在获取视频信息...');
+                updateProgress(50, '正在获取视频信息...');
                 
                 const apiUrl = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${videoId}`;
-                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+                const jsonText = await fetchWithProxy(apiUrl);
                 
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
+                const data = JSON.parse(jsonText);
                 console.log('API 响应:', data);
                 
                 if (data && data.status_code === 0 && data.item_list && data.item_list.length > 0) {
@@ -448,6 +502,7 @@
                     
                     if (videoInfo && videoInfo.play_addr && videoInfo.play_addr.url_list) {
                         let videoUrl = videoInfo.play_addr.url_list[0];
+                        // 替换水印参数
                         videoUrl = videoUrl.replace('playwm', 'play');
                         videoUrl = videoUrl.replace(/&watermark=1/g, '&watermark=0');
                         videoUrl = videoUrl.replace(/watermark=1/g, 'watermark=0');
@@ -491,22 +546,14 @@
             submitBtn.disabled = true;
             submitBtn.textContent = '处理中...';
 
+            // 重置代理索引
+            currentProxyIndex = 0;
+
             try {
                 updateProgress(10, '正在解析链接...');
                 
-                let videoId = null;
-                
-                // 尝试从长链接提取视频ID
-                const longLinkMatch = videoUrl.match(/douyin\.com\/video\/(\d+)/);
-                if (longLinkMatch) {
-                    videoId = longLinkMatch[1];
-                    console.log('从长链接提取视频ID:', videoId);
-                }
-                
-                // 如果是短链接，需要解析
-                if (!videoId && videoUrl.includes('v.douyin.com')) {
-                    videoId = await getVideoIdFromShortUrl(videoUrl);
-                }
+                // 获取视频 ID
+                const videoId = await getVideoIdFromUrl(videoUrl);
                 
                 if (!videoId) {
                     hideProgress();
@@ -520,7 +567,7 @@
                 // 尝试获取视频
                 const result = await getVideoByApi(videoId);
                 
-                updateProgress(80, '正在处理视频...');
+                updateProgress(90, '正在处理视频...');
                 
                 if (result.success) {
                     updateProgress(100, '处理完成！');
