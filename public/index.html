@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediaTools - 免费在线图片视频处理工具</title>
+    <meta name="description" content="免费在线图片格式转换、图片压缩、图片尺寸调整、视频去水印等工具">
+    <meta name="keywords" content="图片转换,图片压缩,图片尺寸调整,视频去水印,在线工具">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .watermark-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 20px;
+        }
+
+        .legal-notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }
+
+        .legal-notice h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .legal-notice p, .legal-notice li {
+            color: #856404;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        .legal-notice ul {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-video {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .result-info {
+            margin-bottom: 20px;
+        }
+
+        .result-info p {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .result-info strong {
+            color: #667eea;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+        }
+
+        .error-message {
+            color: #dc3545;
+            padding: 15px;
+            background: #f8d7da;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tool-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .tool-link {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .tool-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .tool-link-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+        }
+
+        .tool-link-content h3 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .tool-link-content p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .notice-box {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .notice-box h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .notice-box p {
+            color: #1976d2;
+            line-height: 1.6;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .tool-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .tool-title {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .tool-desc {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>MediaTools</h1>
+            <p class="subtitle">免费在线图片视频处理工具</p>
+        </header>
+
+        <div class="watermark-section">
+            <h2>🎥 视频去水印</h2>
+
+            <div class="legal-notice">
+                <h3>⚠️ 法律声明</h3>
+                <p><strong>本功能仅供个人学习和研究使用，不得用于以下用途：</strong></p>
+                <ul>
+                    <li>❌ 商业用途</li>
+                    <li>❌ 传播他人作品</li>
+                    <li>❌ 侵犯版权</li>
+                    <li>❌ 其他非法用途</li>
+                </ul>
+                <p><strong>使用即代表您同意本免责声明。</strong></p>
+            </div>
+
+            <div class="input-section">
+                <h3>📱 粘贴抖音链接</h3>
+                <div class="input-group">
+                    <input type="text" id="douyinUrl" placeholder="粘贴抖音分享链接，如：https://v.douyin.com/xxx/ 或 7.43 pda:/ 让你...">
+                    <button class="btn btn-primary" id="parseBtn" onclick="parseVideo()">解析视频</button>
+                </div>
+                <p style="color: #666; font-size: 0.85rem;">支持：抖音视频链接、分享口令、完整URL</p>
+            </div>
+
+            <div id="loading" class="loading" style="display: none;">
+                正在解析中，请稍候...
+            </div>
+
+            <div id="result" class="result-section">
+                <div class="result-info">
+                    <p><strong>标题：</strong><span id="videoTitle"></span></p>
+                    <p><strong>作者：</strong><span id="videoAuthor"></span></p>
+                    <p><strong>点赞：</strong><span id="videoLikes"></span> | <strong>评论：</strong><span id="videoComments"></span> | <strong>分享：</strong><span id="videoShares"></span></p>
+                </div>
+                <video id="videoPreview" class="result-video" controls></video>
+                <div>
+                    <a id="downloadBtn" class="download-btn" download>下载无水印视频</a>
+                    <a id="downloadCover" class="download-btn" download style="background: #17a2b8;">下载封面</a>
+                </div>
+            </div>
+
+            <div id="error" class="error-message" style="display: none;"></div>
+
+            <div class="notice-box">
+                <h4>💡 使用提示</h4>
+                <p>本功能使用 Cloudflare Workers 实现，完全免费。如果解析失败，请使用下方的备用工具。</p>
+            </div>
+
+            <h3 style="margin-top: 30px;">🔧 备用工具</h3>
+            <p style="color: #666; margin-bottom: 20px;">如果本站解析失败，请使用以下第三方工具：</p>
+
+            <div class="tool-links">
+                <a href="https://qinggongju.com/douyin" target="_blank" class="tool-link">
+                    <span class="tool-link-icon">🔧</span>
+                    <div class="tool-link-content">
+                        <h3>轻工具导航</h3>
+                        <p>支持抖音/快手/小红书/B站</p>
+                    </div>
+                </a>
+
+                <a href="https://6li6.com/douyin" target="_blank" class="tool-link">
+                    <span class="tool-link-icon">🎬</span>
+                    <div class="tool-link-content">
+                        <h3>6li6在线工具</h3>
+                        <p>抖音视频/图片无水印下载</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="tools-grid">
+            <div class="tool-card" onclick="location.href='#image-tools'">
+                <div class="tool-icon">🖼️</div>
+                <div class="tool-title">图片格式转换</div>
+                <div class="tool-desc">支持 PNG、JPG、WEBP 格式互相转换</div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='#image-tools'">
+                <div class="tool-icon">📉</div>
+                <div class="tool-title">图片压缩</div>
+                <div class="tool-desc">压缩图片大小，保持画质</div>
+            </div>
+
+            <div class="tool-card" onclick="location.href='#image-tools'">
+                <div class="tool-icon">📐</div>
+                <div class="tool-title">图片尺寸调整</div>
+                <div class="tool-desc">调整图片宽高比和尺寸</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cloudflare Workers API 地址
+        const API_URL = 'https://douyin-api.selferunt03.workers.dev';
+
+        // 备用 API 列表
+        const BACKUP_APIS = [
+            'https://apis.jxcxin.cn/api/douyin',
+            'https://www.devtool.top/api/douyin/parse'
+        ];
+
+        async function parseVideo() {
+            const urlInput = document.getElementById('douyinUrl');
+            const parseBtn = document.getElementById('parseBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('请输入抖音链接');
+                return;
+            }
+
+            // 显示加载状态
+            parseBtn.disabled = true;
+            loading.style.display = 'block';
+            result.classList.remove('show');
+            error.style.display = 'none';
+
+            try {
+                // 尝试主 API
+                let data = await tryMainAPI(url);
+                
+                // 如果主 API 失败，尝试备用 API
+                if (!data || !data.success) {
+                    data = await tryBackupAPIs(url);
+                }
+
+                if (data && data.success) {
+                    showResult(data.data);
+                } else {
+                    showError('解析失败，请尝试备用工具');
+                }
+            } catch (err) {
+                showError('解析出错: ' + err.message);
+            } finally {
+                parseBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        async function tryMainAPI(url) {
+            try {
+                const response = await fetch(`${API_URL}?url=${encodeURIComponent(url)}`);
+                return await response.json();
+            } catch (err) {
+                console.log('Main API failed:', err);
+                return null;
+            }
+        }
+
+        async function tryBackupAPIs(url) {
+            for (const api of BACKUP_APIS) {
+                try {
+                    const response = await fetch(`${api}?url=${encodeURIComponent(url)}`);
+                    const data = await response.json();
+                    if (data.code === 200 || data.success) {
+                        return { success: true, data: data.data || data };
+                    }
+                } catch (err) {
+                    console.log(`Backup API ${api} failed:`, err);
+                }
+            }
+            return null;
+        }
+
+        function showResult(data) {
+            document.getElementById('videoTitle').textContent = data.title || '无标题';
+            document.getElementById('videoAuthor').textContent = data.author || '未知';
+            document.getElementById('videoLikes').textContent = formatNumber(data.like_count || 0);
+            document.getElementById('videoComments').textContent = formatNumber(data.comment_count || 0);
+            document.getElementById('videoShares').textContent = formatNumber(data.share_count || 0);
+
+            const videoPreview = document.getElementById('videoPreview');
+            videoPreview.src = data.video_url;
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.href = data.video_url;
+            downloadBtn.download = `${data.title || 'video'}.mp4`;
+
+            const downloadCover = document.getElementById('downloadCover');
+            downloadCover.href = data.cover;
+            downloadCover.download = `${data.title || 'cover'}.jpg`;
+
+            document.getElementById('result').classList.add('show');
+        }
+
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+        }
+
+        function formatNumber(num) {
+            if (num >= 10000) {
+                return (num / 10000).toFixed(1) + 'w';
+            }
+            return num.toString();
+        }
+
+        // 支持粘贴自动解析
+        document.getElementById('douyinUrl').addEventListener('paste', function(e) {
+            setTimeout(() => parseVideo(), 100);
+        });
+    </script>
+</body>
+</html>
