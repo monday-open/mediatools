@@ -1,147 +1,174 @@
-# MediaTools - 免费在线图片视频处理工具
+# MediaTools 项目文档
 
-## ✨ 功能列表
+## 项目简介
 
-### 🖼️ 图片工具
-- 🔄 **格式转换**：PNG、JPG、WEBP 互相转换
-- 📦 **图片压缩**：压缩图片大小，保持画质
-- 📐 **尺寸调整**：调整图片宽高比和尺寸
+MediaTools 是一个免费的在线文档格式转换工具，支持多种文档格式互相转换，并提供抖音视频去水印功能。
 
-### 🎬 视频工具
-- 🎥 **视频去水印**：支持抖音视频去水印（开发中）
+## 功能特性
 
-## 🚀 快速开始
+### 文档格式转换
+- ✅ HTML ↔ Markdown ↔ TXT ↔ Word (DOCX)
+- ✅ JSON ↔ CSV
+- ✅ Markdown ↔ RST
 
-### 一键部署（推荐）
+### 抖音视频去水印
+- ✅ 支持抖音视频链接解析
+- ✅ 提取视频下载链接
+- ✅ 获取视频元数据（标题、作者、点赞数等）
 
-#### Windows 用户
-```bash
-cd C:\Users\Administrator\.openclaw\workspace\mediatools
-deploy.bat
+## 技术栈
+
+- **前端**: HTML + JavaScript (ES6 Modules)
+- **后端**: Node.js + Cloudflare Worker
+- **转换库**:
+  - mammoth (DOCX 转换)
+  - docx (Word 生成)
+  - json2csv (JSON 转 CSV)
+  - csv-writer (CSV 写入)
+  - markdown-it (Markdown 处理)
+  - rst2html (RST 处理)
+
+## 部署指南
+
+### 方式一：GitHub Pages（推荐）
+
+1. **创建 GitHub 仓库**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/monday-open/mediatools.git
+   git push -u origin main
+   ```
+
+2. **启用 GitHub Pages**
+   - 访问仓库 Settings → Pages
+   - 选择分支：`main` / 目录：`/ (root)`
+   - 点击 Save
+
+3. **访问网站**
+   - https://monday-open.github.io/mediatools/
+
+### 方式二：Vercel 部署
+
+1. **安装 Vercel CLI**
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **部署**
+   ```bash
+   cd mediatools
+   vercel
+   ```
+
+3. **配置环境变量**（如需要）
+   - 在 Vercel Dashboard 中配置
+
+### 方式三：Cloudflare Worker（后端）
+
+1. **部署后端 API**
+   ```bash
+   npm install -g wrangler
+   wrangler login
+   wrangler publish
+   ```
+
+2. **配置 Worker**
+   - 访问 https://dash.cloudflare.com
+   - Workers & Pages → Create Worker
+   - 上传 `api/watermark.js`
+   - 设置环境变量（如需要）
+
+## 使用方法
+
+### 文档格式转换
+
+1. 选择输入格式（HTML/Markdown/TXT/Word/JSON/CSV/RST）
+2. 选择输出格式
+3. 粘贴要转换的内容
+4. 点击"开始转换"
+5. 下载转换后的文件
+
+### 抖音视频去水印
+
+1. 输入抖音视频链接
+2. 点击"去水印"
+3. 查看解析结果并下载视频
+
+## API 文档
+
+### 抖音去水印 API
+
+**请求**
+```
+GET /api/watermark?url={douyin_url}
 ```
 
-#### Linux/Mac 用户
-```bash
-cd /Users/Administrator/.openclaw/workspace/mediatools
-chmod +x deploy.sh
-./deploy.sh
+**响应**
+```json
+{
+  "success": true,
+  "data": {
+    "title": "视频标题",
+    "cover": "封面图片URL",
+    "video_url": "视频下载链接",
+    "music_url": "音乐下载链接",
+    "author": "作者名称",
+    "like_count": 1000,
+    "comment_count": 100,
+    "share_count": 50
+  }
+}
 ```
 
-### 手动部署
+## 开发指南
 
-详见 [AUTO-DEPLOY.md](AUTO-DEPLOY.md)
+### 安装依赖
+```bash
+npm install
+```
 
-## 📊 部署状态
+### 本地开发
+```bash
+npm run preview
+```
 
-- ✅ 前端：GitHub Pages
-  - 地址：https://monday-open.github.io/mediatools/
-- ⏳ 后端：Vercel（自动部署中）
-  - 地址：https://mediatools-api.vercel.app
+### 构建项目
+```bash
+npm run build
+```
 
-## 🛠️ 技术栈
-
-### 前端
-- HTML5
-- CSS3
-- JavaScript (ES6+)
-
-### 后端
-- Node.js
-- Express
-- Axios
-
-## 📁 项目结构
+## 文件结构
 
 ```
 mediatools/
-├── index.html              # 前端主页
-├── deploy.bat              # Windows 部署脚本
-├── deploy.sh               # Linux/Mac 部署脚本
-├── test.bat                # Windows 测试脚本
-├── test.sh                 # Linux/Mac 测试脚本
-├── AUTO-DEPLOY.md          # 自动化部署指南
-├── DEPLOYMENT.md           # 部署指南
-├── VIDEO-WATERMARK-REMOVAL.md  # 去水印开发计划
-├── backend/                # 后端 API
-│   ├── index.js           # 入口文件
-│   ├── api/
-│   │   └── douyin.js      # 抖音去水印 API
-│   ├── services/
-│   │   └── douyin.js      # 抖音去水印服务
-│   ├── routes.js          # 路由配置
-│   ├── package.json       # 依赖配置
-│   └── vercel.json        # Vercel 配置
-└── frontend/               # 前端部署配置
-    ├── package.json       # gh-pages 依赖
-    └── .gitignore         # Git 忽略文件
+├── index.html              # 前端页面
+├── package.json            # 项目配置和依赖
+├── wrangler.jsonc          # Cloudflare 配置
+├── lib/
+│   └── document-converter.js  # 文档转换逻辑
+├── api/
+│   └── watermark.js        # 抖音去水印 API
+├── public/
+│   └── docs/               # 文档目录
+└── deploy/                 # 部署文件
 ```
 
-## 📖 文档
+## 贡献指南
 
-- [自动化部署指南](AUTO-DEPLOY.md) - 一键部署教程
-- [部署指南](DEPLOYMENT.md) - 详细部署说明
-- [视频去水印开发计划](VIDEO-WATERMARK-REMOVAL.md) - 去水印功能设计
+欢迎提交 Issue 和 Pull Request！
 
-## 🧪 测试
-
-### 一键测试
-
-#### Windows 用户
-```bash
-cd C:\Users\Administrator\.openclaw\workspace\mediatools
-test.bat
-```
-
-#### Linux/Mac 用户
-```bash
-cd /Users/Administrator/.openclaw/workspace/mediatools
-chmod +x test.sh
-./test.sh
-```
-
-## 🔧 开发
-
-### 本地运行后端
-
-```bash
-cd backend
-npm install
-npm start
-```
-
-### 本地运行前端
-
-```bash
-# 部署到 GitHub Pages
-cd frontend
-npm install
-npm run deploy
-```
-
-## 📊 功能状态
-
-| 功能 | 状态 | 说明 |
-|------|------|------|
-| 图片格式转换 | ✅ 已完成 | PNG/JPG/WEBP 互转 |
-| 图片压缩 | ✅ 已完成 | 压缩图片大小 |
-| 图片尺寸调整 | ✅ 已完成 | 调整图片尺寸 |
-| 视频去水印 | ⏳ 开发中 | 抖音去水印功能 |
-
-## 🎯 计划功能
-
-- [ ] 获取 Adsterra 广告代码
-- [ ] 集成广告到网站
-- [ ] 注册 HilltopAds 账户
-- [ ] 支持更多平台（小红书、B站等）
-
-## 📞 问题反馈
-
-如有问题，请提交 Issue 或联系开发者。
-
-## 📄 许可证
+## 许可证
 
 MIT License
 
----
+## 联系方式
 
-*最后更新：2026-03-30*
+- GitHub: https://github.com/monday-open/mediatools
+- 问题反馈: https://github.com/monday-open/mediatools/issues
+
+## 免责声明
+
+本工具仅供学习和个人使用，请勿用于非法用途。使用本工具产生的任何后果由用户自行承担。

@@ -1,4 +1,4 @@
-// Cloudflare Worker - 抖音去水印 API（使用创信API）
+// 抖音去水印 API（使用创信API）
 // 免费额度：每天 10 万次请求
 // 部署方法：https://dash.cloudflare.com -> Workers & Pages -> Create Worker
 
